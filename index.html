@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="ink">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Library Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="static/css/style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div class="hero-top">
+        <span class="status" id="status" data-state="wait"><i></i><b id="status-text">Connecting…</b></span>
+        <div class="themes" role="group" aria-label="Colour theme">
+          <button class="swatch sw-ink" data-theme="ink" title="Ink" aria-label="Ink theme"></button>
+          <button class="swatch sw-forest" data-theme="forest" title="Forest" aria-label="Forest theme"></button>
+          <button class="swatch sw-plum" data-theme="plum" title="Plum night" aria-label="Plum night theme"></button>
+        </div>
+      </div>
+      <div class="hero-text">
+        <h1>Library<br />Management System</h1>
+        <p>Add books, search the shelves, issue them to members and take them back. Built with Flask and SQLite.</p>
+      </div>
+      <div class="spines" aria-hidden="true">
+        <span class="spine" style="--h:112px;--w:22px;--c:#c0392b"></span>
+        <span class="spine" style="--h:140px;--w:28px;--c:#e9a820"></span>
+        <span class="spine" style="--h:98px;--w:20px;--c:#2e86c1"></span>
+        <span class="spine" style="--h:152px;--w:30px;--c:#1e8e6e"></span>
+        <span class="spine" style="--h:120px;--w:24px;--c:#8e44ad"></span>
+        <span class="spine" style="--h:104px;--w:22px;--c:#e67e22"></span>
+        <span class="spine" style="--h:146px;--w:26px;--c:#34495e"></span>
+        <span class="spine lean" style="--h:118px;--w:24px;--c:#d35486"></span>
+        <i class="shelf"></i>
+      </div>
+    </header>
+
+    <div class="offline" id="offline" hidden>
+      <div>
+        <strong id="offline-title"></strong>
+        <span id="offline-detail"></span>
+      </div>
+      <button class="btn light" id="retry-btn">Connect to server</button>
+    </div>
+
+    <main>
+      <section class="stats" aria-label="Library summary">
+        <div class="stat c1"><strong id="stat-books">0</strong><span>Books in library</span></div>
+        <div class="stat c2"><strong id="stat-available">0</strong><span>Available now</span></div>
+        <div class="stat c3"><strong id="stat-issued">0</strong><span>Issued out</span></div>
+        <div class="stat c4"><strong id="stat-members">0</strong><span>Members</span></div>
+      </section>
+
+      <div class="two">
+        <section class="panel">
+          <div class="panel-head"><h2>Add a book</h2><p>Every book needs a unique ISBN.</p></div>
+          <form id="book-form" novalidate>
+            <div class="grid2">
+              <div class="field">
+                <label for="b-title">Title</label>
+                <input id="b-title" type="text" placeholder="Clean Code" autocomplete="off" />
+                <small class="err" data-for="b-title"></small>
+              </div>
+              <div class="field">
+                <label for="b-author">Author</label>
+                <input id="b-author" type="text" placeholder="Robert C. Martin" autocomplete="off" />
+                <small class="err" data-for="b-author"></small>
+              </div>
+              <div class="field">
+                <label for="b-isbn">ISBN</label>
+                <input id="b-isbn" type="text" placeholder="978-0-13-235088-4" autocomplete="off" />
+                <small class="err" data-for="b-isbn"></small>
+              </div>
+              <div class="field">
+                <label for="b-category">Category</label>
+                <select id="b-category"></select>
+                <small class="err" data-for="b-category"></small>
+              </div>
+            </div>
+            <div class="actions"><button type="submit" class="btn primary" id="book-btn">Add book</button></div>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head"><h2>Add a member</h2><p>Members can borrow books.</p></div>
+          <form id="member-form" novalidate>
+            <div class="stack">
+              <div class="field">
+                <label for="m-name">Full name</label>
+                <input id="m-name" type="text" placeholder="Riya Sharma" autocomplete="off" />
+                <small class="err" data-for="m-name"></small>
+              </div>
+              <div class="field">
+                <label for="m-email">Email</label>
+                <input id="m-email" type="email" placeholder="riya@example.com" autocomplete="off" />
+                <small class="err" data-for="m-email"></small>
+              </div>
+            </div>
+            <div class="actions"><button type="submit" class="btn primary" id="member-btn">Add member</button></div>
+          </form>
+          <div class="members" id="members"></div>
+        </section>
+      </div>
+
+      <section class="panel">
+        <div class="list-head">
+          <div class="panel-head"><h2>Book catalogue</h2><p id="count-label">0 books shown</p></div>
+          <div class="tools">
+            <input id="search" type="search" placeholder="Search title, author or ISBN" aria-label="Search books" />
+            <select id="filter" aria-label="Filter by status">
+              <option value="">All books</option>
+              <option value="available">Available</option>
+              <option value="issued">Issued</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Book</th><th>ISBN</th><th>Category</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+
+        <div class="empty" id="empty" hidden>
+          <p id="empty-text"></p>
+          <button class="btn ghost" id="sample-btn" hidden>Load sample books and members</button>
+        </div>
+      </section>
+    </main>
+    <footer class="foot">Library Management System · Flask + SQLite + JavaScript</footer>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <dialog id="issue-dlg">
+    <h3>Issue this book</h3>
+    <p id="issue-text"></p>
+    <label for="issue-member">Member</label>
+    <select id="issue-member"></select>
+    <small class="err" id="issue-err"></small>
+    <div class="actions end">
+      <button class="btn ghost" id="issue-no">Cancel</button>
+      <button class="btn primary" id="issue-yes">Issue book</button>
+    </div>
+  </dialog>
+
+  <dialog id="confirm">
+    <p id="confirm-text">Delete this book?</p>
+    <div class="actions end">
+      <button class="btn ghost" id="confirm-no">Keep</button>
+      <button class="btn danger" id="confirm-yes">Delete book</button>
+    </div>
+  </dialog>
+
+  <script src="static/js/app.js"></script>
+</body>
+</html>
